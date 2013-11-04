@@ -28,8 +28,9 @@ try cp $KIVYIOSROOT/src/python_files/_scproxy.py Lib/_scproxy.py
 
 echo "Building for native machine ============================================"
 
-try ./configure CC="$CCACHE clang -Qunused-arguments -fcolor-diagnostics" LDFLAGS="-lsqlite3"
-try make python.exe Parser/pgen
+OSX_SDK_ROOT=`xcrun --sdk macosx --show-sdk-path`
+try ./configure CC="clang -Qunused-arguments -fcolor-diagnostics" LDFLAGS="-lsqlite3" CFLAGS="--sysroot=$OSX_SDK_ROOT"
+try make -j4 python.exe Parser/pgen
 try mv python.exe hostpython
 try mv Parser/pgen Parser/hostpgen
 try make distclean
@@ -38,6 +39,7 @@ echo "Building for iOS ======================================================="
 
 # patch python to cross-compile
 try patch -p1 < $KIVYIOSROOT/src/python_files/Python-$IOS_PYTHON_VERSION-xcompile.patch
+try patch -p1 < $KIVYIOSROOT/src/python_files/Python-$IOS_PYTHON_VERSION-setuppath.patch
 
 # set up environment variables for cross compilation
 #export CPPFLAGS="-I$IOSSDKROOT/usr/lib/gcc/arm-apple-darwin11/4.2.1/include/ -I$IOSSDKROOT/usr/include/"
@@ -66,7 +68,7 @@ try ./configure CC="$ARM_CC" LD="$ARM_LD" \
 try patch -p1 < $KIVYIOSROOT/src/python_files/Python-$IOS_PYTHON_VERSION-pyconfig.patch
 try patch -p1 < $KIVYIOSROOT/src/python_files/Python-$IOS_PYTHON_VERSION-ctypes_duplicate.patch
 
-try make HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen \
+try make -j4 HOSTPYTHON=./hostpython HOSTPGEN=./Parser/hostpgen \
      CROSS_COMPILE_TARGET=yes
 
 try make install HOSTPYTHON=./hostpython CROSS_COMPILE_TARGET=yes \
